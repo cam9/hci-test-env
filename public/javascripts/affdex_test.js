@@ -90,11 +90,6 @@ detector.addEventListener("onImageResultsSuccess", function(faces, image, timest
     }
 });
 
-detector.addEventListener("onImageResultsFailure", function (image, timestamp, err_detail) {
-    log('#logs', 'Image failure');
-});
-
-
 //Draw the detected facial feature points on the image
 function drawFeaturePoints(img, featurePoints) {
     var contxt = $('#face_video_canvas')[0].getContext('2d');
