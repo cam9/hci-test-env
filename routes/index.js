@@ -3,7 +3,8 @@ var router = express.Router();
 
 /* GET home page. */
 router.get('/', function(req, res, next) {
-  res.render('affdex.html', { title: 'Express' });
+  res.render('affdex', { title: 'Express' });
+
 });
 
 module.exports = router;
