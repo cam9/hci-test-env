@@ -86,7 +86,7 @@ detector.addEventListener("onImageResultsSuccess", function(faces, image, timest
                 return val.toFixed ? Number(val.toFixed(0)) : val;
             }));
         log('#results', "Emoji: " + faces[0].emojis.dominantEmoji);
-        drawFeaturePoints(image, faces[0].featurePoints);
+        //drawFeaturePoints(image, faces[0].featurePoints);
     }
 });
 
