@@ -9,9 +9,8 @@ var detector = new affdex.CameraDetector(divRoot, width, height, faceMode);
 
 //Enable detection of all Expressions, Emotions and Emojis classifiers.
 detector.detectAllEmotions();
-detector.detectAllExpressions();
-detector.detectAllEmojis();
-detector.detectAllAppearance();
+
+var faceData;
 
 //Add a callback to notify when the detector is initialized and ready for runing.
 detector.addEventListener("onInitializeSuccess", function() {
@@ -75,35 +74,100 @@ detector.addEventListener("onStopSuccess", function() {
 //Faces object contains probabilities for all the different expressions, emotions and appearance metrics
 detector.addEventListener("onImageResultsSuccess", function(faces, image, timestamp) {
     $('#results').html("");
-    log('#results', "Timestamp: " + timestamp.toFixed(2));
-    log('#results', "Number of faces found: " + faces.length);
     if (faces.length > 0) {
-        log('#results', "Appearance: " + JSON.stringify(faces[0].appearance));
+        faceData = faces[0].emotions;
         log('#results', "Emotions: " + JSON.stringify(faces[0].emotions, function(key, val) {
                 return val.toFixed ? Number(val.toFixed(0)) : val;
             }));
-        log('#results', "Expressions: " + JSON.stringify(faces[0].expressions, function(key, val) {
-                return val.toFixed ? Number(val.toFixed(0)) : val;
-            }));
-        log('#results', "Emoji: " + faces[0].emojis.dominantEmoji);
-        //drawFeaturePoints(image, faces[0].featurePoints);
     }
 });
 
-//Draw the detected facial feature points on the image
-function drawFeaturePoints(img, featurePoints) {
-    var contxt = $('#face_video_canvas')[0].getContext('2d');
+var eventLog = [];
+var lastX = -1;
+var lastY = -1;
 
-    var hRatio = contxt.canvas.width / img.width;
-    var vRatio = contxt.canvas.height / img.height;
-    var ratio = Math.min(hRatio, vRatio);
+const MOUSE_MOVE = 'm';
+const MOUSE_CLICK = 'c';
+const RIGHT_CLICK = 'rc';
+const DOULBE_CLICK = 'dc';
+const MOUSE_DOWN = 'md';
+const MOUSE_UP = 'mu';
 
-    contxt.strokeStyle = "#FFFFFF";
-    for (var id in featurePoints) {
-        contxt.beginPath();
-        contxt.arc(featurePoints[id].x,
-            featurePoints[id].y, 2, 0, 2 * Math.PI);
-        contxt.stroke();
+//const STARTED = false;
 
+
+
+$(document).mousemove(function (event){
+    if(event.pageX == lastX && event.pageY == lastY){
+        return;
     }
+    lastX = event.pageX;
+    lastY = event.pageY;
+
+    const t = new Date().getTime();
+    var text = event.pageX + ", " + event.pageY;
+    $('#mouse_logs').text("Mouse pos: " + text + " Time: " + t);
+    logEvent(event, MOUSE_MOVE);
+});
+
+$(document).click(function (event){
+    logEvent(event, MOUSE_CLICK);
+});
+
+$(document).contextmenu(function (event){
+    logEvent(event, RIGHT_CLICK);
+});
+
+$(document).dblclick(function (event){
+    logEvent(event, DOULBE_CLICK);
+});
+
+$(document).mousedown(function (event){
+    logEvent(event, MOUSE_DOWN);
+});
+
+$(document).mouseup(function (event){
+    logEvent(event, MOUSE_UP);
+});
+
+var last_accepted_time;
+
+function logEvent(event, identifier){
+    const t = new Date().getTime();
+
+    if(filter(event, identifier, t))
+        return;
+    else
+        last_accepted_time = t;
+
+    var emotions = "";
+    for(var emotion in faceData){
+        emotions += (faceData[emotion].toFixed(1)) + ", ";
+    }
+
+    var eventLine = `${identifier}, ${event.pageX}, ${event.pageY}, ${t}, ${emotions}`;
+
+    eventLog.push(eventLine);
+
+}
+
+const  NEWNESS_THRESHOLD_MILI = 16;
+
+function filter(event, indentifier, t){
+    return too_recent(t) && indentifier == 'm';
+}
+
+function too_recent(t) {
+    return t - last_accepted_time <= NEWNESS_THRESHOLD_MILI;
+}
+
+function sendLog() {
+    const sentLog = eventLog;
+    eventLog = [];
+
+    $.ajax({
+        url: "/store_eventlog",
+        type: "POST",
+        data: {'event_log' : sentLog}
+    });
 }
