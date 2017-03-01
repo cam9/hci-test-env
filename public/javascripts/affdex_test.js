@@ -1,5 +1,9 @@
 // SDK Needs to create video and canvas nodes in the DOM in order to function
 // Here we are adding those nodes a predefined div.
+
+var STARTED = false;
+
+
 var divRoot = $("#affdex_elements")[0];
 var width = 640;
 var height = 480;
@@ -35,15 +39,21 @@ function onStart() {
 
 //function executes when the Stop button is pushed.
 function onStop() {
+    STARTED = false;
+
     log('#logs', "Clicked the stop button");
     if (detector && detector.isRunning) {
         detector.removeEventListener();
         detector.stop();
     }
+
+    sendLog();
 };
 
 //function executes when the Reset button is pushed.
 function onReset() {
+    eventLog = [];
+
     log('#logs', "Clicked the reset button");
     if (detector && detector.isRunning) {
         detector.reset();
@@ -80,6 +90,8 @@ detector.addEventListener("onImageResultsSuccess", function(faces, image, timest
                 return val.toFixed ? Number(val.toFixed(0)) : val;
             }));
     }
+
+    STARTED = true;
 });
 
 var eventLog = [];
@@ -92,10 +104,6 @@ const RIGHT_CLICK = 'rc';
 const DOULBE_CLICK = 'dc';
 const MOUSE_DOWN = 'md';
 const MOUSE_UP = 'mu';
-
-//const STARTED = false;
-
-
 
 $(document).mousemove(function (event){
     if(event.pageX == lastX && event.pageY == lastY){
@@ -135,7 +143,7 @@ var last_accepted_time;
 function logEvent(event, identifier){
     const t = new Date().getTime();
 
-    if(filter(event, identifier, t))
+    if(ignore(event, identifier, t))
         return;
     else
         last_accepted_time = t;
@@ -153,7 +161,10 @@ function logEvent(event, identifier){
 
 const  NEWNESS_THRESHOLD_MILI = 16;
 
-function filter(event, indentifier, t){
+function ignore(event, indentifier, t){
+    if(!STARTED)
+        return false;
+
     return too_recent(t) && indentifier == 'm';
 }
 

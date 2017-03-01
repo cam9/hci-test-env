@@ -4,6 +4,8 @@
  * Module dependencies.
  */
 
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+
 var app = require('../app');
 var debug = require('debug')('hci-test-env:server');
 var http = require('http');
